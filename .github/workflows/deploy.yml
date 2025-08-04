@@ -19,13 +19,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+        
+      - name: Install AWS CDK for TypeScript globally
+        run: npm install -g aws-cdk typescript
 
       - name: Install dependencies
         run: npm ci
 
       - name: Lint
         run: |
-          npx eslint . --ext .ts
+          npm run lint 
 
       - name: Build - cdk synth
         run: |
@@ -62,6 +65,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      
+      - name: Install AWS CDK for TypeScript globally
+        run: npm install -g aws-cdk typescript
 
       - name: Install dependencies
         run: npm ci
