@@ -9,13 +9,14 @@ export class InfrastructureStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
   public readonly lambdaFunction: lambda.Function;
   public readonly ec2Instance: ec2.Instance;
+  public readonly privateEc2Instance: ec2.Instance;
 
   constructor(scope: Construct, id: string, props: AppSettings) {
     super(scope, id, {
       ...props,
       env: {
-        account: props.account,
-        region: props.region,
+        account: props.env?.account || process.env.CDK_DEFAULT_ACCOUNT,
+        region: props.env?.region || process.env.CDK_DEFAULT_REGION,
       },
     });
 
@@ -101,6 +102,56 @@ export class InfrastructureStack extends cdk.Stack {
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
       },
+    });
+
+    const privateEc2SecurityGroup = new ec2.SecurityGroup(this, 'PrivateEc2SecurityGroup', {
+      vpc: this.vpc,
+      description: 'Allow SSH and HTTP access to private EC2',
+      allowAllOutbound: true,
+    });
+
+    privateEc2SecurityGroup.addIngressRule(
+      ec2SecurityGroup,
+      ec2.Port.allTraffic(),
+      'Allow all traffic from bastion security group'
+    );
+
+    privateEc2SecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(22),
+      'Allow SSH access'
+    );
+
+    privateEc2SecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(80),
+      'Allow HTTP access'
+    );
+
+    const privateEc2Role = new iam.Role(this, 'PrivateEC2Role', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'),
+      ],
+    });
+
+    this.privateEc2Instance = new ec2.Instance(this, 'private-ec2', {
+      vpc: this.vpc,
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL),
+      machineImage: ec2.MachineImage.latestAmazonLinux2(),
+      securityGroup: privateEc2SecurityGroup,
+      role: privateEc2Role,
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      },
+      userData: ec2.UserData.custom(`#!/bin/bash
+        yum update -y
+        yum install -y nginx
+        systemctl start nginx
+        systemctl enable nginx
+        echo "<p>Instance ID: $(curl -s http://169.254.169.254/latest/meta-data/instance-id)</p>" > /usr/share/nginx/html/index.html
+        echo "<p>Availability Zone: $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</p>" >> /usr/share/nginx/html/index.html
+      `),
     });
 
     new cdk.CfnOutput(this, 'VpcId', {
