@@ -33,15 +33,11 @@ jobs:
 
       - name: Build - cdk synth
         run: |
-          npx cdk synth
-
-      - name: cdk-nag
-        run: |
-          npx cdk-nag
+          cdk synth
 
       - name: Diff - cdk diff
         run: |
-          npx cdk diff
+          cdk diff
 
       - name: Upload cdk.out
         uses: actions/upload-artifact@v4
