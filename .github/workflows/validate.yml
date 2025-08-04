@@ -21,11 +21,10 @@ jobs:
         with:
           node-version: 22
         
-      - name: Install AWS CLI
+      - name: test aws cli
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
+          aws --version
+          aws sts get-caller-identity
         
       - name: Install AWS CDK for TypeScript globally
         run: npm install -g aws-cdk typescript
