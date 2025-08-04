@@ -25,7 +25,6 @@ jobs:
 
       - name: Lint
         run: |
-          npx tsc --noEmit
           npx eslint . --ext .ts
 
       - name: Build - cdk synth

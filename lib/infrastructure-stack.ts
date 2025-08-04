@@ -3,18 +3,25 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { AppSettings } from '../config/settings';
 
 export class InfrastructureStack extends cdk.Stack {
   public readonly vpc: ec2.Vpc;
   public readonly lambdaFunction: lambda.Function;
   public readonly ec2Instance: ec2.Instance;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+  constructor(scope: Construct, id: string, props: AppSettings) {
+    super(scope, id, {
+      ...props,
+      env: {
+        account: props.account,
+        region: props.region,
+      },
+    });
 
-    const maxAzs = (props as any)?.maxAzs ?? 2;
-    const natGateways = (props as any)?.natGateways ?? 2;
-    const vpcCidr = (props as any)?.vpcCidr ?? '10.0.0.0/16';
+    const maxAzs = props.maxAzs;
+    const natGateways = props.natGateways;
+    const vpcCidr = props.vpcCidr;
 
     this.vpc = new ec2.Vpc(this, 'MyVPC', {
       ipAddresses: ec2.IpAddresses.cidr(vpcCidr),

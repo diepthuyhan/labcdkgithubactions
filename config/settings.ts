@@ -1,4 +1,6 @@
-export interface AppSettings {
+import * as cdk from 'aws-cdk-lib';
+
+export interface AppSettings extends cdk.StackProps {
   account: string;
   region: string;
   vpcCidr: string;
