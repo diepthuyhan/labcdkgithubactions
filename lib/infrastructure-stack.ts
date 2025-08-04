@@ -13,11 +13,7 @@ export class InfrastructureStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: AppSettings) {
     super(scope, id, {
-      ...props,
-      env: {
-        account: props.account,
-        region: props.region,
-      },
+      ...props
     });
 
     const maxAzs = props.maxAzs;
