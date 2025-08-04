@@ -1,0 +1,48 @@
+name: validate
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: |
+          npx tsc --noEmit
+          npx eslint . --ext .ts
+
+      - name: Build - cdk synth
+        run: |
+          npx cdk synth
+
+      - name: cdk-nag
+        run: |
+          npx cdk-nag
+
+      - name: Diff - cdk diff
+        run: |
+          npx cdk diff
+
+      - name: Upload cdk.out
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk.out
+          path: cdk.out
+          include-hidden-files: true
